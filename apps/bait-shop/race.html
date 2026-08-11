@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Fathom Outfitters — Last One Left</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: Georgia, 'Times New Roman', serif; }
+  body { background: #f6f3ec; color: #22282e; }
+  header { background: #12333e; color: #f6f3ec; padding: 18px 32px; }
+  header h1 { font-size: 22px; font-weight: normal; letter-spacing: 1px; }
+  header h1 span { color: #e0a458; }
+  main { max-width: 620px; margin: 60px auto; padding: 0 20px; text-align: center; }
+  .card { background: #fff; border: 1px solid #ded8cb; border-radius: 4px; padding: 34px; }
+  .swatch { height: 150px; background: #37667a; border-radius: 3px; margin-bottom: 18px; }
+  h2 { font-size: 24px; font-weight: normal; margin-bottom: 6px; }
+  .stock { color: #b3562e; margin-bottom: 22px; font-size: 15px; }
+  button { background: #b3562e; color: #fff; border: none; padding: 14px 30px; font-size: 17px; border-radius: 3px; cursor: pointer; }
+  button:disabled { background: #d7d3c8; cursor: default; }
+  #result { margin-top: 22px; font-size: 16px; min-height: 48px; }
+  .ok { color: #2f7d4f; }
+  .no { color: #a33; }
+</style>
+</head>
+<body>
+<header><h1>Fathom <span>Outfitters</span> — flash sale</h1></header>
+<main>
+  <div class="card">
+    <div class="swatch"></div>
+    <h2>Abyss Duffel — final unit</h2>
+    <div class="stock">Only <strong>1</strong> left in stock. One per customer.</div>
+    <button id="claimBtn">Claim the last one</button>
+    <div id="result"></div>
+  </div>
+</main>
+<script>
+  const btn = document.getElementById('claimBtn');
+  const out = document.getElementById('result');
+  // Each tab is a different shopper.
+  const buyer = 'buyer-' + Math.random().toString(36).slice(2, 8);
+  btn.addEventListener('click', async () => {
+    btn.disabled = true;
+    out.textContent = 'Claiming…';
+    try {
+      const res = await fetch('/api/claim?buyer=' + encodeURIComponent(buyer), { method: 'POST' });
+      const data = await res.json();
+      if (data.ok) {
+        out.innerHTML = '<span class="ok">✓ Confirmed! The last Abyss Duffel is yours.<br>Order ' + data.order + '</span>';
+      } else {
+        out.innerHTML = '<span class="no">Sold out — someone beat you to it.</span>';
+      }
+    } catch (e) {
+      out.innerHTML = '<span class="no">Something went wrong.</span>';
+      btn.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>

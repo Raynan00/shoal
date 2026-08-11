@@ -1,0 +1,20 @@
+{
+  "name": "shoal-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "packages/*",
+    "apps/dashboard"
+  ],
+  "scripts": {
+    "build": "npm run build -w apps/dashboard && npm run build -w packages/core",
+    "demo": "npm run build && node packages/core/dist/cli.js demo",
+    "dev:dashboard": "npm run dev -w apps/dashboard",
+    "shoal": "node packages/core/dist/cli.js"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Raynan00/shoal.git"
+  }
+}

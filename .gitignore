@@ -1,0 +1,8 @@
+node_modules/
+dist/
+shoal-report.md
+shoal-report.json
+*.log
+.env
+.claude/
+capture/

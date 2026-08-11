@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Fathom Chat</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: Georgia, serif; }
+  body { background: #f6f3ec; color: #22282e; }
+  header { background: #12333e; color: #f6f3ec; padding: 16px 28px; display: flex; justify-content: space-between; align-items: center; }
+  header h1 { font-size: 20px; font-weight: normal; letter-spacing: 1px; }
+  header h1 span { color: #e0a458; }
+  .who { background: #e0a458; color: #12333e; padding: 5px 12px; border-radius: 3px; font-size: 13px; }
+  main { max-width: 520px; margin: 28px auto; padding: 0 20px; }
+  .card { background: #fff; border: 1px solid #ded8cb; border-radius: 4px; padding: 18px; }
+  #thread { min-height: 220px; display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+  .bubble { max-width: 78%; padding: 9px 13px; border-radius: 12px; font-size: 14px; }
+  .mine { align-self: flex-end; background: #12333e; color: #fff; }
+  .theirs { align-self: flex-start; background: #e8e3d6; }
+  .empty { color: #8a8577; font-size: 14px; text-align: center; margin-top: 80px; }
+  .compose { display: flex; gap: 8px; }
+  input { flex: 1; padding: 9px; border: 1px solid #c9c2b2; border-radius: 3px; font-size: 15px; background: #fffdf8; }
+  button { background: #12333e; color: #fff; border: none; padding: 9px 16px; border-radius: 3px; font-size: 14px; cursor: pointer; }
+  button.sec { background: #6b7280; margin-left: 8px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Fathom <span>Chat</span></h1>
+  <span class="who" id="whoBadge">—</span>
+</header>
+<main>
+  <div class="card">
+    <div id="thread"><div class="empty">No messages yet.</div></div>
+    <div class="compose">
+      <input id="msg" placeholder="Message…" />
+      <button id="send-btn">Send</button>
+      <button class="sec" id="refresh-btn">Refresh</button>
+    </div>
+  </div>
+</main>
+<script>
+  const who = new URLSearchParams(location.search).get('who') || 'Sam';
+  const partner = who === 'Sam' ? 'Riley' : 'Sam';
+  document.getElementById('whoBadge').textContent = '💬 ' + who;
+  const j = (u, o) => fetch(u, o).then(r => r.json());
+  const render = (msgs) => {
+    const el = document.getElementById('thread');
+    el.innerHTML = msgs.length
+      ? msgs.map(m => '<div class="bubble ' + (m.mine ? 'mine' : 'theirs') + '">' + m.text + '</div>').join('')
+      : '<div class="empty">No messages yet.</div>';
+  };
+  document.getElementById('send-btn').addEventListener('click', async () => {
+    const text = document.getElementById('msg').value.trim();
+    if (!text) return;
+    await j('/api/chat/send', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ from: who, to: partner, text }) });
+    document.getElementById('msg').value = '';
+    render((await j('/api/chat?who=' + who)).messages);
+  });
+  const refresh = async () => render((await j('/api/chat?who=' + who)).messages);
+  document.getElementById('refresh-btn').addEventListener('click', refresh);
+  refresh();
+</script>
+</body>
+</html>

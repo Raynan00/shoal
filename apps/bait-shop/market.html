@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Fathom Market</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: Georgia, 'Times New Roman', serif; }
+  body { background: #f6f3ec; color: #22282e; }
+  header { background: #12333e; color: #f6f3ec; padding: 16px 28px; display: flex; justify-content: space-between; align-items: center; }
+  header h1 { font-size: 20px; font-weight: normal; letter-spacing: 1px; }
+  header h1 span { color: #e0a458; }
+  .role-badge { background: #e0a458; color: #12333e; padding: 5px 12px; border-radius: 3px; font-size: 13px; }
+  main { max-width: 640px; margin: 30px auto; padding: 0 20px; }
+  .card { background: #fff; border: 1px solid #ded8cb; border-radius: 4px; padding: 22px; margin-bottom: 18px; }
+  h2 { font-size: 18px; font-weight: normal; margin-bottom: 14px; }
+  label { display: block; font-size: 13px; margin: 10px 0 4px; color: #555; }
+  input { width: 100%; padding: 9px; border: 1px solid #c9c2b2; border-radius: 3px; font-size: 15px; background: #fffdf8; }
+  button { background: #12333e; color: #fff; border: none; padding: 10px 18px; border-radius: 3px; font-size: 14px; cursor: pointer; margin-top: 14px; }
+  button.sec { background: #6b7280; }
+  .buy-btn { background: #b3562e; margin-top: 0; }
+  .row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee; }
+  .row:last-child { border-bottom: none; }
+  .muted { color: #8a8577; font-size: 14px; }
+  .ok { color: #2f7d4f; }
+  #toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); background: #12333e; color: #fff; padding: 10px 20px; border-radius: 3px; display: none; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Fathom <span>Market</span></h1>
+  <span class="role-badge" id="roleBadge">—</span>
+</header>
+<main>
+  <!-- SELLER -->
+  <section id="seller-view" style="display:none">
+    <div class="card">
+      <h2>List an item</h2>
+      <label>Item</label><input id="item-title" placeholder="Blue Kayak" />
+      <label>Price ($)</label><input id="item-price" placeholder="50" />
+      <button id="list-btn">List for sale</button>
+      <div id="list-msg" class="muted" style="margin-top:10px"></div>
+    </div>
+    <div class="card">
+      <h2>Your sales</h2>
+      <div id="sales-list"><div class="muted">No sales yet.</div></div>
+      <button class="sec" id="refresh-sales">Refresh sales</button>
+    </div>
+  </section>
+
+  <!-- BUYER -->
+  <section id="buyer-view" style="display:none">
+    <div class="card">
+      <h2>For sale</h2>
+      <div id="listings"><div class="muted">Nothing listed yet.</div></div>
+      <button class="sec" id="refresh-listings">Refresh</button>
+    </div>
+  </section>
+</main>
+<div id="toast"></div>
+<script>
+  const role = new URLSearchParams(location.search).get('role') || 'buyer';
+  document.getElementById('roleBadge').textContent = role === 'seller' ? '🧑‍💼 Seller' : '🛒 Buyer';
+  document.getElementById(role + '-view').style.display = 'block';
+  const me = 'me-' + Math.random().toString(36).slice(2, 7);
+  const toast = (m) => { const t = document.getElementById('toast'); t.textContent = m; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 1800); };
+  const j = (u, o) => fetch(u, o).then(r => r.json());
+
+  if (role === 'seller') {
+    document.getElementById('list-btn').addEventListener('click', async () => {
+      const title = document.getElementById('item-title').value.trim();
+      const price = document.getElementById('item-price').value.trim();
+      if (!title || !price) return;
+      await j('/api/market/list', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ seller: me, title, price: Number(price) }) });
+      document.getElementById('list-msg').innerHTML = '<span class="ok">✓ Listed "' + title + '" for $' + price + '</span>';
+      toast('Item listed');
+    });
+    const renderSales = async () => {
+      // BUG: this reads the seller-notification queue, which the buy path never writes to.
+      const data = await j('/api/market/my-sales');
+      const el = document.getElementById('sales-list');
+      el.innerHTML = data.sales.length
+        ? data.sales.map(s => '<div class="row"><span>' + s.title + '</span><span class="ok">SOLD to ' + s.buyer + '</span></div>').join('')
+        : '<div class="muted">No sales yet.</div>';
+    };
+    document.getElementById('refresh-sales').addEventListener('click', renderSales);
+  }
+
+  if (role === 'buyer') {
+    const renderListings = async () => {
+      const data = await j('/api/market/listings');
+      const el = document.getElementById('listings');
+      const open = data.listings.filter(l => !l.sold);
+      el.innerHTML = open.length
+        ? open.map(l => '<div class="row"><span>' + l.title + ' — $' + l.price + '</span><button class="buy-btn" data-id="' + l.id + '">Buy now</button></div>').join('')
+        : '<div class="muted">Nothing listed yet.</div>';
+      el.querySelectorAll('.buy-btn').forEach(b => b.addEventListener('click', async () => {
+        const res = await j('/api/market/buy?id=' + b.dataset.id + '&buyer=' + me, { method: 'POST' });
+        if (res.ok) { el.innerHTML = '<div class="ok">✓ You bought "' + res.title + '"! Order ' + res.order + '</div>'; toast('Purchased!'); }
+        else toast('Sold out');
+      }));
+    };
+    document.getElementById('refresh-listings').addEventListener('click', renderListings);
+    renderListings();
+  }
+</script>
+</body>
+</html>

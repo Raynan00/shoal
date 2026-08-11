@@ -1,0 +1,74 @@
+# Shoal strategy library — the SECOND axis.
+#
+# A persona is WHO the user is. A strategy is WHAT they're trying to do to the app.
+# They're orthogonal, so `personas × strategies` multiplies behavioral coverage:
+# 8 personas × 6 strategies = 48 distinct agents from two small libraries.
+#
+# `goal` overrides the run's --task when set; `directive` is appended to the agent's
+# system prompt. Contributions welcome — a strategy is ~10 lines.
+
+strategies:
+  - id: complete-task
+    name: Complete the task
+    directive: >
+      Pursue the task directly and finish it if you can. Behave as your persona naturally
+      would — do not go out of your way to break things.
+
+  - id: explore
+    name: Explorer / tourist
+    goal: >
+      You have no specific goal. Wander the site and see what it offers, clicking whatever
+      draws your attention.
+    directive: >
+      You are exploring, not completing a task. Click things you have not clicked, follow
+      links, open sections, and see where they lead. Report dead links, pages that go
+      nowhere, controls whose purpose is unclear, and anything that leaves you stranded
+      with no obvious way back.
+
+  - id: adversarial-input
+    name: Adversarial input
+    directive: >
+      Whenever you meet an input field, fill it with hostile-but-plausible values before
+      trying valid ones: emoji and accented characters in a name, a very long string in a
+      short field, an email like "a@b", a postal code with letters, a quantity of 0 or -1,
+      a date in the past where a future date is expected. You are a real user with messy
+      data, not a hacker — nothing malicious. Report every field that accepts obvious
+      garbage, every rejection with no explanation, and every error message that does not
+      tell you how to fix the problem.
+
+  - id: rage-quit
+    name: Rage-quit / funnel
+    directive: >
+      You are in a hurry and have low tolerance for friction. Pursue the task, but the
+      moment something is slow, confusing, unresponsive, or asks more of you than you
+      expected, abandon it — exactly as a real user would close the tab. Before you quit,
+      call report_finding describing PRECISELY what made you leave and at which step. Your
+      abandonment point is the single most valuable thing you produce.
+
+  - id: dark-patterns
+    name: Dark-pattern audit
+    directive: >
+      Audit the flow for manipulation as you go. Watch specifically for: costs or fees
+      that appear late, pre-checked opt-ins, subscriptions that are easy to start and hard
+      to cancel, confirmshaming ("No thanks, I like paying full price"), fake urgency or
+      scarcity, and anything designed to make the cheaper or safer choice harder to find.
+      Report each one with the exact wording you saw. If a cost or condition was not
+      disclosed up front, refuse to complete the purchase and say why.
+
+  - id: state-breaker
+    name: State-breaker
+    directive: >
+      Stress the app's state handling with plausible user mistakes: go back mid-flow and
+      then forward again, submit a form twice, re-visit a page you already completed,
+      change something after you have moved past it. You are not trying to hack the site,
+      you are a real user who wanders. Report anything that loses your data, duplicates an
+      action, shows stale information, or leaves you in a state you cannot escape.
+
+  - id: race
+    name: Concurrency / race
+    directive: >
+      You are competing with other users for the SAME limited resource at the SAME moment.
+      Move quickly to the contended action and, when you reach it, take it immediately.
+      Afterwards check carefully whether you actually got it and whether what the screen
+      says matches what really happened. Report any case where you and someone else both
+      appear to have claimed something that only one of you should have.

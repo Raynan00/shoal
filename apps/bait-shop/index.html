@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Fathom Outfitters</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: Georgia, 'Times New Roman', serif; }
+  body { background: #f6f3ec; color: #22282e; }
+  header { background: #12333e; color: #f6f3ec; padding: 18px 32px; display: flex; justify-content: space-between; align-items: center; }
+  header h1 { font-size: 22px; letter-spacing: 1px; font-weight: normal; }
+  header h1 span { color: #e0a458; }
+  .cart-btn { background: #e0a458; color: #12333e; border: none; padding: 10px 18px; font-size: 15px; cursor: pointer; border-radius: 3px; }
+  main { max-width: 960px; margin: 0 auto; padding: 32px 20px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .card { background: #fff; border: 1px solid #ded8cb; border-radius: 4px; padding: 18px; text-align: center; }
+  .swatch { height: 110px; border-radius: 3px; margin-bottom: 12px; }
+  .card h3 { font-size: 17px; margin-bottom: 4px; font-weight: normal; }
+  .price { color: #6b7280; margin-bottom: 12px; }
+  .add { background: #12333e; color: #fff; border: none; padding: 9px 16px; cursor: pointer; border-radius: 3px; font-size: 14px; }
+  .page { display: none; }
+  .page.active { display: block; }
+  .row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e5e0d4; }
+  .totals { margin-top: 14px; text-align: right; font-size: 17px; }
+  label { display: block; margin: 14px 0 4px; font-size: 14px; }
+  input { width: 100%; max-width: 420px; padding: 10px; border: 1px solid #c9c2b2; border-radius: 3px; font-size: 15px; background: #fffdf8; }
+  /* TRAP #2: this is the real, enabled submit button — styled to look disabled */
+  .looks-disabled { background: #d7d3c8; color: #a09a8c; border: 1px solid #c9c2b2; padding: 11px 22px; border-radius: 3px; font-size: 15px; cursor: default; margin-top: 22px; }
+  .primary { background: #b3562e; color: #fff; border: none; padding: 11px 22px; border-radius: 3px; font-size: 15px; cursor: pointer; margin-top: 22px; }
+  .muted { color: #8a8577; font-size: 13px; margin-top: 8px; }
+  .success { text-align: center; padding: 60px 0; }
+  .success h2 { font-size: 26px; margin-bottom: 10px; }
+  #toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #12333e; color: #fff; padding: 10px 20px; border-radius: 3px; display: none; }
+  h2.section { font-size: 21px; margin-bottom: 18px; font-weight: normal; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Fathom <span>Outfitters</span> — gear for the deep</h1>
+  <button class="cart-btn" id="cartBtn">Cart (<span id="cartCount">0</span>)</button>
+</header>
+<main>
+  <!-- CATALOG -->
+  <section class="page active" id="page-catalog">
+    <h2 class="section">Featured gear</h2>
+    <div class="grid">
+      <div class="card"><div class="swatch" style="background:#37667a"></div><h3>Tidal Anorak</h3><div class="price">$84.00</div><button class="add" data-name="Tidal Anorak" data-price="84">Add to cart</button></div>
+      <div class="card"><div class="swatch" style="background:#e0a458"></div><h3>Dorsal Fin Cap</h3><div class="price">$28.00</div><button class="add" data-name="Dorsal Fin Cap" data-price="28">Add to cart</button></div>
+      <div class="card"><div class="swatch" style="background:#5d5a4e"></div><h3>Abyss Duffel</h3><div class="price">$120.00</div><button class="add" data-name="Abyss Duffel" data-price="120">Add to cart</button></div>
+    </div>
+  </section>
+
+  <!-- CART -->
+  <section class="page" id="page-cart">
+    <h2 class="section">Your cart</h2>
+    <div id="cartRows"></div>
+    <div class="totals">Subtotal: $<span id="subtotal">0.00</span></div>
+    <!-- TRAP #1: dead on the first two clicks; works on the third -->
+    <button class="primary" id="continueBtn">Continue to checkout</button>
+    <div class="muted">Free returns within 30 days.</div>
+  </section>
+
+  <!-- CHECKOUT -->
+  <section class="page" id="page-checkout">
+    <h2 class="section">Checkout</h2>
+    <form id="checkoutForm" onsubmit="return false;">
+      <label>Full name</label><input id="f-name" placeholder="Ada Marlin" />
+      <label>Email</label><input id="f-email" placeholder="ada@sea.example" />
+      <label>Shipping address</label><input id="f-addr" placeholder="1 Reef Way" />
+      <!-- TRAP #3: required, but validation failure is completely silent -->
+      <label>Postal code</label><input id="f-zip" placeholder="00000" />
+      <!-- TRAP #4: shipping fee appears only here, never mentioned earlier -->
+      <div class="totals">Total: $<span id="grandTotal">0.00</span> <span class="muted">(incl. $19.50 priority reef shipping)</span></div>
+      <!-- TRAP #2: real submit button, styled disabled -->
+      <button class="looks-disabled" id="placeOrderBtn">Place order</button>
+    </form>
+  </section>
+
+  <!-- SUCCESS -->
+  <section class="page" id="page-success">
+    <div class="success">
+      <h2>Order confirmed 🐟</h2>
+      <p>Your gear is swimming your way. Confirmation #<span id="orderNo"></span></p>
+    </div>
+  </section>
+</main>
+<div id="toast"></div>
+<script>
+  const cart = [];
+  let continueClicks = 0;
+
+  const $ = (id) => document.getElementById(id);
+  const show = (id) => {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    $(id).classList.add('active');
+  };
+  const toast = (msg) => {
+    const t = $('toast'); t.textContent = msg; t.style.display = 'block';
+    setTimeout(() => t.style.display = 'none', 1800);
+  };
+  const money = (n) => n.toFixed(2);
+
+  document.querySelectorAll('.add').forEach(btn => btn.addEventListener('click', () => {
+    cart.push({ name: btn.dataset.name, price: Number(btn.dataset.price) });
+    $('cartCount').textContent = cart.length;
+    toast(btn.dataset.name + ' added');
+  }));
+
+  $('cartBtn').addEventListener('click', () => {
+    const rows = cart.map(i => `<div class="row"><span>${i.name}</span><span>$${money(i.price)}</span></div>`).join('')
+      || '<div class="muted">Your cart is empty. Add something from the catalog.</div>';
+    $('cartRows').innerHTML = rows;
+    $('subtotal').textContent = money(cart.reduce((s, i) => s + i.price, 0));
+    show('page-cart');
+  });
+
+  // TRAP #1: silently ignores the first two clicks
+  $('continueBtn').addEventListener('click', () => {
+    continueClicks++;
+    if (continueClicks < 3) return; // no feedback at all
+    if (cart.length === 0) { toast('Cart is empty'); return; }
+    $('grandTotal').textContent = money(cart.reduce((s, i) => s + i.price, 0) + 19.5);
+    show('page-checkout');
+  });
+
+  // TRAP #2 + #3: button works despite looking disabled; missing zip fails silently
+  $('placeOrderBtn').addEventListener('click', () => {
+    const zip = $('f-zip').value.trim();
+    const name = $('f-name').value.trim();
+    if (!name || !zip || !/^[0-9]{4,10}$/.test(zip)) {
+      return; // TRAP #3: no error message, no highlight, nothing
+    }
+    $('orderNo').textContent = 'FA-' + Math.floor(1000 + Math.random() * 9000);
+    show('page-success');
+  });
+</script>
+</body>
+</html>

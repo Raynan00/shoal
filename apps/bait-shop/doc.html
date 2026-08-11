@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Fathom Docs</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: Georgia, serif; }
+  body { background: #f6f3ec; color: #22282e; }
+  header { background: #12333e; color: #f6f3ec; padding: 16px 28px; display: flex; justify-content: space-between; align-items: center; }
+  header h1 { font-size: 20px; font-weight: normal; letter-spacing: 1px; }
+  header h1 span { color: #e0a458; }
+  .who { background: #e0a458; color: #12333e; padding: 5px 12px; border-radius: 3px; font-size: 13px; }
+  main { max-width: 660px; margin: 28px auto; padding: 0 20px; }
+  .card { background: #fff; border: 1px solid #ded8cb; border-radius: 4px; padding: 22px; }
+  textarea { width: 100%; min-height: 220px; padding: 12px; font-size: 15px; font-family: Georgia, serif; border: 1px solid #c9c2b2; border-radius: 3px; background: #fffdf8; resize: vertical; }
+  button { background: #12333e; color: #fff; border: none; padding: 10px 18px; border-radius: 3px; font-size: 14px; cursor: pointer; margin-top: 14px; margin-right: 8px; }
+  button.sec { background: #6b7280; }
+  .muted { color: #8a8577; font-size: 13px; margin-top: 8px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Fathom <span>Docs</span> — Q3 Plan (shared)</h1>
+  <span class="who" id="whoBadge">—</span>
+</header>
+<main>
+  <div class="card">
+    <textarea id="doc" placeholder="Type your section…"></textarea>
+    <button id="save-btn">Save</button>
+    <button class="sec" id="reload-btn">Reload from server</button>
+    <div class="muted" id="msg"></div>
+  </div>
+</main>
+<script>
+  const who = new URLSearchParams(location.search).get('who') || 'Someone';
+  document.getElementById('whoBadge').textContent = '✍️ ' + who;
+  const j = (u, o) => fetch(u, o).then(r => r.json());
+  document.getElementById('save-btn').addEventListener('click', async () => {
+    await j('/api/doc/save', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ who, text: document.getElementById('doc').value }) });
+    document.getElementById('msg').textContent = '✓ Saved';
+  });
+  document.getElementById('reload-btn').addEventListener('click', async () => {
+    const d = await j('/api/doc');
+    document.getElementById('doc').value = d.content;
+    document.getElementById('msg').textContent = 'Reloaded from server';
+  });
+</script>
+</body>
+</html>

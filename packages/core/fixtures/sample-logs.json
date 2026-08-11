@@ -1,0 +1,20 @@
+{
+  "product": "Fathom Outfitters — a small direct-to-consumer store selling diving and ocean gear.",
+  "distribution": [
+    { "segment": "impatient mobile shopper who skims and taps fast", "share": 0.42 },
+    { "segment": "deal-hunter who compares prices and distrusts fees", "share": 0.23 },
+    { "segment": "first-time / low-confidence online buyer", "share": 0.20 },
+    { "segment": "returning customer who knows the flow", "share": 0.15 }
+  ],
+  "dropoffs": [
+    { "step": "cart → checkout transition", "rate": 0.34 },
+    { "step": "checkout form → order placed", "rate": 0.19 }
+  ],
+  "errors": [
+    { "message": "Uncaught TypeError: cannot read properties of null (reading 'value')", "route": "/checkout", "count": 214 }
+  ],
+  "rageClicks": [
+    { "element": "Continue to checkout button", "count": 143 },
+    { "element": "Place order button", "count": 61 }
+  ]
+}
